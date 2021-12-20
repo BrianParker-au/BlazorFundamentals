@@ -36,18 +36,21 @@ namespace BlazorFundamentals.Services.MediaQuery
         public event NotifyResizing OnResizing;
 
         public async ValueTask<ElementRectangle> GetElementBoundingRectangleAsync(ElementReference elementReference) =>
-            await module!.InvokeAsync<ElementRectangle>(identifier: "GetBoundingRectangle", elementReference);
+            await module.InvokeAsync<ElementRectangle>(identifier: "GetBoundingRectangle", elementReference);
 
         public async ValueTask InitializeAsync()
         {
-            this.module = await jsRuntime.InvokeAsync<IJSObjectReference>(
+            this.module = await this.jsRuntime.InvokeAsync<IJSObjectReference>(
                identifier: "import",
                 args: "./_content/BSizeJsInterop/sizer.js");
 
             this.objRef = DotNetObjectReference.Create(this);
-            await module!.InvokeVoidAsync(identifier: "listenToWindowResize", this.objRef);
-            this.windowSize = await module!.InvokeAsync<WindowSize>(identifier: "GetWindowRectangle");
+            await this.module.InvokeVoidAsync(identifier: "listenToWindowResize", this.objRef);
+            await this.GetWindowSizeAsync();
         }
+
+        public async ValueTask<WindowSize> GetWindowSizeAsync() =>
+            this.windowSize = await this.module.InvokeAsync<WindowSize>(identifier: "GetWindowRectangle");
 
         [JSInvokable]
         public ValueTask WindowResizeEvent()
@@ -55,21 +58,21 @@ namespace BlazorFundamentals.Services.MediaQuery
             if (this.isResizing is not true)
             {
                 this.isResizing = true;
-                OnResizing?.Invoke(this.isResizing);
+                this.OnResizing?.Invoke(this.isResizing);
             }
-            DebounceEvent();
+            this.DebounceEvent();
             return ValueTask.CompletedTask;
         }
 
         private void DebounceEvent() => this.timer.Restart();
 
-        private async ValueTask GetDimensions(object? sender, System.Timers.ElapsedEventArgs e)
+        private async ValueTask GetDimensions(object sender, System.Timers.ElapsedEventArgs e)
         {
             this.timer.Stop();
-            this.windowSize = await module!.InvokeAsync<WindowSize>(identifier: "GetWindowRectangle");
-            OnResize?.Invoke();
-            isResizing = false;
-            OnResizing?.Invoke(this.isResizing);
+            await this.GetWindowSizeAsync();
+            this.OnResize?.Invoke();
+            this.isResizing = false;
+            this.OnResizing?.Invoke(this.isResizing);
         }
     }
 }

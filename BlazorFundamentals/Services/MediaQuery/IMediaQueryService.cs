@@ -18,6 +18,7 @@ namespace BlazorFundamentals.Services.MediaQuery
         event NotifyResizing OnResizing;
 
         ValueTask InitializeAsync();
-        ValueTask<ElementRectangle> GetElementBoundingRectangleAsync(ElementReference someDiv);
+        ValueTask<ElementRectangle> GetElementBoundingRectangleAsync(ElementReference elementReference);
+        ValueTask<WindowSize> GetWindowSizeAsync();
     }
 }
